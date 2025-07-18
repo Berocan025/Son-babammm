@@ -1694,4 +1694,62 @@ function truncateText($text, $limit = 100, $readMoreText = 'Devamını Oku') {
     <span class="full-text" style="display: none;">' . $text . ' <a href="#" class="read-less-link" onclick="toggleReadMore(this)">Daha Az Göster</a></span>';
 }
 
+// Load bulk content for performance
+function loadBulkContent($keys) {
+    global $pdo;
+    $content = [];
+    try {
+        $placeholders = implode(',', array_fill(0, count($keys), '?'));
+        $stmt = $pdo->prepare("SELECT content_key, content_text FROM site_contents WHERE content_key IN ($placeholders)");
+        $stmt->execute($keys);
+        $results = $stmt->fetchAll();
+        
+        foreach ($results as $row) {
+            $content[$row['content_key']] = $row['content_text'];
+        }
+    } catch(PDOException $e) {
+        // Return empty array on error
+    }
+    return $content;
+}
+
+// Load bulk settings for performance
+function loadBulkSettings($keys) {
+    global $pdo;
+    $settings = [];
+    try {
+        $placeholders = implode(',', array_fill(0, count($keys), '?'));
+        $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ($placeholders)");
+        $stmt->execute($keys);
+        $results = $stmt->fetchAll();
+        
+        foreach ($results as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
+        }
+    } catch(PDOException $e) {
+        // Return empty array on error
+    }
+    return $settings;
+}
+
+// Get visible content sections
+function getVisibleContentSections() {
+    global $pdo;
+    try {
+        $stmt = $pdo->query("SELECT * FROM content_sections WHERE is_visible = 1 ORDER BY sort_order ASC");
+        return $stmt->fetchAll();
+    } catch(PDOException $e) {
+        // Return default sections if table doesn't exist
+        return [
+            ['section_key' => 'hero_section'],
+            ['section_key' => 'stats_section'],
+            ['section_key' => 'services_section'],
+            ['section_key' => 'projects_section'],
+            ['section_key' => 'products_section'],
+            ['section_key' => 'why_choose_section'],
+            ['section_key' => 'contact_section']
+        ];
+    }
+}
+
 ?>
